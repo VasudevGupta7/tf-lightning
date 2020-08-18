@@ -6,38 +6,8 @@
 import tensorflow as tf
 # from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
-from callbacks import Callback
+from tf_lightning.callbacks import Callback
 
-class Trainer(object):
-    
-    def __init__(self, lightning_module, lightning_data_module, **kwargs):
-        
-        self.epochs= kwargs.get('epochs', 10)
-        self.restore_ckpt= kwargs.get('restore_ckpt', False)
-        
-        
-        self.lightning_module= lightning_module
-        self.lightning_data_module= lightning_data_module
-        
-        
-    def fit(self):
-        
-        tr_dataset= self.lightning_data_module.train_dataloader()
-        val_dataset= self.lightning_data_module.val_dataloader()
-        
-        self.lightning_module.train(tr_dataset, val_dataset)
-
-class LightningDataModule(object):
-    
-    def __init__(self):
-        pass
-    
-    def train_dataloader(self):
-        pass
-        
-    def val_dataloader(self):
-        pass
-            
 class LightningModule(tf.keras.Model):
     
     def __init__(self, save_dir):
@@ -55,7 +25,7 @@ class LightningModule(tf.keras.Model):
         
         self.callbacks= Callback()
     
-    def restore(self, ckpt, assert_consumed= False):
+    def load_from_checkpoint(self, ckpt, assert_consumed= False):
         # generally: self.manager.latest_checkpoint
         status= self.checkpoint.restore(ckpt)
         if assert_consumed:
@@ -71,7 +41,7 @@ class LightningModule(tf.keras.Model):
               assert_consumed=False,
               ):
         
-        if load_dir: self.restore(load_dir, assert_consumed)
+        if load_dir: self.load_from_checkpoint(load_dir, assert_consumed)
         
         for epoch in range(1, 1+epochs):
             
@@ -95,21 +65,8 @@ class LightningModule(tf.keras.Model):
         
         return epoch_metrics
     
-    def configure_optimizers(self)
+    def configure_optimizers(self):
         pass
-    
-    def optimizer_step(self, optimizer_idx, batch_idx):
-        
-        if optimizer_idx == 1:
-            tape= 
-            trainable_variables= 
-            
-        elif optimizer_idx == 0:
-            tape= 
-            trainable_variables= 
-            
-        gradients= tape.gradient(loss, trainable_variables)
-        optimizer.apply_gradients(zip(gradients, trainable_variables))
     
     def evaluate(self, val_dataset):
         
@@ -129,11 +86,20 @@ class LightningModule(tf.keras.Model):
         
     def training_step(self, batch, batch_idx, optimizer_idx):
         pass
+        # if optimizer_idx == 1:
+        #     tape= 
+        #     trainable_variables= 
+            
+        # elif optimizer_idx == 0:
+        #     tape= 
+        #     trainable_variables= 
+            
+        # gradients= tape.gradient(loss, trainable_variables)
+        # optimizer.apply_gradients(zip(gradients, trainable_variables))
         
     def validation_step(self, batch, batch_idx, optimizer_idx):
         pass
         
     def test_step(self, batch, batch_idx, optimizer_idx):
         pass
-        
     
