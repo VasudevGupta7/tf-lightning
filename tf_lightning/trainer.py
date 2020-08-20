@@ -93,6 +93,13 @@ class Trainer(object):
         if bool(self.strategy):
             tr_dataset = self.strategy.experimental_distribute_dataset(tr_dataset)
             val_dataset = self.strategy.experimental_distribute_dataset(val_dataset)
+        
+        if self.enable_function:
+            self.train_step = tf.function(self.model.wrapped_train_step)
+            self.val_step = tf.function(self.model.validation_step)
+        else:
+            self.train_step = self.model.wrapped_train_step
+            self.val_step = self.model.validation_step
 
         self.train(tr_dataset, val_dataset)
 
@@ -106,41 +113,41 @@ class Trainer(object):
             tr_dataset = tr_dataset.take(1)
             val_dataset = val_dataset.take(1)
             self.load_dir = ''
-        
-        if self.enable_function:
-            self.training_step = tf.function(self.model.training_step)
-            
+
         if self.load_dir: 
             self.load_from_checkpoint(Path(self.lightning_base_dir, self.load_dir),
                                 self.assert_consumed)
-        
+
+        self.callbacks.on_train_begin()
+
         for epoch in range(self.start_epoch, 1+self.epochs):
-            
+    
             self.callbacks.on_epoch_begin(epoch)
             batch_idx= 0
-            
+    
             for batch in tr_dataset:
-                
+                self.callbacks.on_batch_begin()
+
                 batch_idx += 1
+        
+                tr_info = self.train_step(batch, batch_idx)
                 
-                tr_loss= self.training_step(batch, batch_idx)
                 val_loss= self.evaluate(val_dataset)
                 
-                step_metrics= self.callbacks.on_batch_end(tr_loss, val_loss)
-            
+                step_metrics= self.callbacks.on_batch_end(tr_info['loss'], val_loss)
+
             if self.save_every_ckpt: self.manager.save()
-            
+
             epoch_metrics= self.callbacks.on_epoch_end(epoch)
-        
+
+        self.callbacks.on_train_end()
+
         if self.save_only_final_ckpts: 
             self.manager.save()
-        
-        return epoch_metrics
-    
-    def evaluate(self, val_dataset):
 
-        if self.enable_function:
-            self.val_step = tf.function(self.model.validation_step)
+        return epoch_metrics        
+
+    def evaluate(self, val_dataset):
         
         batch_idx= 0
 
@@ -170,7 +177,7 @@ class Trainer(object):
             parser.add_argument(f'--{attr}', type=type(getattr(cls, attr)), default=getattr(cls, attr))
         
         return parser
-        
+
     @classmethod
     def from_argparse_args(cls, args, **kwargs):
         """
@@ -180,17 +187,16 @@ class Trainer(object):
         Useful especially in case of defining checkpoint object
         """
         args_dictn = {}
-        
+
         for attr in cls.default_attrs:
             if hasattr(args, attr):
                 value = getattr(args, attr)
                 args_dictn.update({attr: value})
-        
+
         # over-writing over args passed using Terminal
         args_dictn.update(kwargs)
-        
-        if 'checkpoint' in args_dictn:
-            print('==========You are not passing checkpoint object============')
-        
-        return cls(**args_dictn)
 
+        if 'checkpoint' not in args_dictn:
+            print('==========You are not passing checkpoint object============')
+
+        return cls(**args_dictn)

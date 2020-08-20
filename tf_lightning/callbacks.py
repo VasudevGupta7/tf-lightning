@@ -9,13 +9,15 @@ class Callback(object):
         
         self.step = 0
         
-    def on_epoch_begin(self, epoch):
-        
-        self.st_epoch= time.time()
-        self.tr_loss= []
-        self.val_loss= []
-        logger.info(f'epoch-{epoch} started')
-        
+    def on_train_begin(self):
+        pass
+    
+    def on_train_end(self):
+        pass
+
+    def on_batch_begin(self):
+        pass
+
     def on_batch_end(self, tr_loss, val_loss):
         
         self.step += 1
@@ -34,6 +36,13 @@ class Callback(object):
         
         return step_metrics
     
+    def on_epoch_begin(self, epoch):
+        
+        self.st_epoch= time.time()
+        self.tr_loss= []
+        self.val_loss= []
+        logger.info(f'epoch-{epoch} started')
+        
     def on_epoch_end(self, epoch):
         
         # logging per epoch
