@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="tf_nightly-7vasudevgupta",
+    name="tf_lightning",
     version=tf_lightning.__version__,
     author=tf_lightning.__author__ ,
     author_email=tf_lightning.__author_email__,
