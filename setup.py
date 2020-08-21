@@ -7,9 +7,9 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="tf_nightly-7vasudevgupta",
     version=tf_lightning.__version__,
-    author="Vasudev Gupta",
-    author_email="7vasudevgupta@gmail.com",
-    description="Light wrapper for training in tf2",
+    author=tf_lightning.__author__ ,
+    author_email=tf_lightning.__author_email__,
+    description="Light wrapper for models training in tf2",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Apache",
@@ -17,8 +17,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "pathlib==1.0.1",
-        # "tensorflow==2.3",
-        # "wandb==0.9.4"
+        "wandb==0.9.4",
+        # "tensorflow==2.3"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
