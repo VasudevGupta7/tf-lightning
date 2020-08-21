@@ -1,4 +1,5 @@
-# @author: vasudevgupta
+__author__ = "Vasudev Gupta"
+__version__ = "0.0.1"
 
 from tf_lightning.lightning import LightningModule
 from tf_lightning.callbacks import Callback
