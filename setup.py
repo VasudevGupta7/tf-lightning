@@ -1,4 +1,5 @@
 import setuptools
+import tf_lightning
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
