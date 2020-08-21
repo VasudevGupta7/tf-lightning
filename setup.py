@@ -16,9 +16,9 @@ setuptools.setup(
     url="https://github.com/VasudevGupta7/tf-lightning",
     packages=setuptools.find_packages(),
     install_requires=[
-        "pathlib",
-        "tensorflow==2.3",
-        "wandb==0.9.4"
+        "pathlib==1.0.1",
+        # "tensorflow==2.3",
+        # "wandb==0.9.4"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
