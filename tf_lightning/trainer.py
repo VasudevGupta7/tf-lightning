@@ -4,8 +4,11 @@
 """
 import tensorflow as tf
 from pathlib import Path
+import logging
 
 from tf_lightning.callbacks import Callback
+
+logger = logging.getLogger(__name__)
 
 class Trainer(object):
     
@@ -40,10 +43,7 @@ class Trainer(object):
         
     # You can override Callback class and customize methods
     callbacks= Callback()
-        
-    # enable/disable `tf.function`
-    enable_function = False
-        
+
     # Only Wandb is supported currently
     logger = 'Wandb'
         
@@ -72,6 +72,7 @@ class Trainer(object):
             assert(attr in self.default_attrs) 
             setattr(self, attr, kwargs[attr])
         
+        # if no ckpt is given, then nothing will be saved
         if self.checkpoint != None:
             self.save_every_ckpt = True
 
@@ -82,29 +83,31 @@ class Trainer(object):
                                         directory=Path(self.lightning_base_dir, self.ckpt_dir),
                                         max_to_keep=self.max_ckpt_to_keep,
                                         keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours)
-        
+
     def fit(self, lightning_module, lightning_data_module):
-        
+
+        # preparing dataset
+        lightning_data_module.prepare_data()
+
+        lightning_data_module.setup()
         tr_dataset = lightning_data_module.train_dataloader()
         val_dataset = lightning_data_module.val_dataloader()
-        
+
+        # defining model
         self.model = lightning_module
-        
-        if bool(self.strategy):
-            tr_dataset = self.strategy.experimental_distribute_dataset(tr_dataset)
-            val_dataset = self.strategy.experimental_distribute_dataset(val_dataset)
-        
-        if self.enable_function:
-            self.train_step = tf.function(self.model.wrapped_train_step)
-            self.val_step = tf.function(self.model.validation_step)
-        else:
-            self.train_step = self.model.wrapped_train_step
-            self.val_step = self.model.validation_step
 
-        self.train(tr_dataset, val_dataset)
+        # wrapping in tf.function for good performance
+        self.train_step = tf.function(self.model.wrapped_train_step)
+        self.val_step = (self.model.validation_step)
 
+        # finally, just training
+        epoch_metrics = self.train(tr_dataset, val_dataset)
+
+        return epoch_metrics
+        
     def train(self, tr_dataset, val_dataset):
         
+        # just testing
         if self.fast_dev_run:
             print("running on only 1 batch for only 1 epoch, ckpts won't be saved/loaded")
             self.save_only_final_ckpts = False
@@ -121,24 +124,26 @@ class Trainer(object):
         self.callbacks.on_train_begin()
 
         for epoch in range(self.start_epoch, 1+self.epochs):
-    
-            self.callbacks.on_epoch_begin(epoch)
-            batch_idx= 0
-    
-            for batch in tr_dataset:
-                self.callbacks.on_batch_begin()
 
-                batch_idx += 1
-        
+            self.callbacks.on_epoch_begin(epoch)
+            batch_idx= tf.constant(0)
+
+            for batch in tr_dataset:
+                self.callbacks.on_batch_begin(batch_idx)
+
+                batch_idx += tf.constant(1)
+
                 tr_info = self.train_step(batch, batch_idx)
-                
-                val_loss= self.evaluate(val_dataset)
-                
-                step_metrics= self.callbacks.on_batch_end(tr_info['loss'], val_loss)
+
+                val_info= self.evaluate(val_dataset)
+
+                step_metrics= self.callbacks.on_batch_end(batch_idx, tr_info['loss'], val_info['loss'])
 
             if self.save_every_ckpt: self.manager.save()
+            
+            tr_info = self.evaluate(tr_dataset)
 
-            epoch_metrics= self.callbacks.on_epoch_end(epoch)
+            epoch_metrics= self.callbacks.on_epoch_end(epoch, tr_info['loss'], val_info['loss'])
 
         self.callbacks.on_train_end()
 
@@ -149,26 +154,27 @@ class Trainer(object):
 
     def evaluate(self, val_dataset):
         
-        batch_idx= 0
+        batch_idx= tf.constant(0)
 
         for batch in val_dataset:
 
-            batch_idx += 1
+            batch_idx += tf.constant(1)
 
-            loss= self.val_step(batch, batch_idx)
+            val_info= self.val_step(batch, batch_idx, optimizer_idx=0)
 
-        return loss
+        return val_info
 
     def load_from_checkpoint(self, ckpt, assert_consumed= False):
         # generally: self.manager.latest_checkpoint(ckpt_dir)
         
         status= self.checkpoint.restore(ckpt)
+        logger.info('ckpt_restored')
+        
         if assert_consumed:
             status.assert_consumed()
-            logger.info('ckpt_restored')
-
+            
     def test(self):
-        pass
+        return
     
     @classmethod
     def add_argparse_args(cls, parser):
@@ -200,3 +206,4 @@ class Trainer(object):
             print('==========You are not passing checkpoint object============')
 
         return cls(**args_dictn)
+

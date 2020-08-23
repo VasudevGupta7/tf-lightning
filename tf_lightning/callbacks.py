@@ -1,58 +1,66 @@
-"""Useful callbacks
+"""Callback Class
 
 @author: vasudevgupta
 """
+import tensorflow as tf
+import numpy as np
+
+import time
+import logging
+import wandb
+
+logger = logging.getLogger(__name__)
 
 class Callback(object):
-    
+
     def __init__(self):
-        
-        self.step = 0
-        
+        """
+        You can overwrite this class whenever you need to :)
+        """
+        logger.info('using in-built callbacks or its extension')
+    
     def on_train_begin(self):
-        pass
-    
+        logger.info('Training Inititated')
+
     def on_train_end(self):
-        pass
+        logger.info('YAAYYYY, Model is trained')
 
-    def on_batch_begin(self):
-        pass
-
-    def on_batch_end(self, tr_loss, val_loss):
-        
-        self.step += 1
-        self.tr_loss.append(tr_loss.numpy())
-        self.val_loss.append(val_loss.numpy())
-        
-        # logging per step
-        step_metrics= {
-                    'step': self.step,
-                    "step_tr_crossentropy_loss": tr_loss.numpy(),
-                    'step_val_crossentropy_loss': val_loss.numpy()
-                }
-        wandb.log(step_metrics)
-        
-        print(f"step-{self.step} ===== {step_metrics}")
-        
-        return step_metrics
-    
     def on_epoch_begin(self, epoch):
         
-        self.st_epoch= time.time()
-        self.tr_loss= []
-        self.val_loss= []
+        self.start_epoch= time.time()
+
         logger.info(f'epoch-{epoch} started')
-        
-    def on_epoch_end(self, epoch):
-        
+
+    def on_epoch_end(self, epoch, tr_loss, val_loss):
+
         # logging per epoch
         epoch_metrics= {
                 'epoch': epoch,
-                "epoch_avg_tr_crossentropy_loss": np.mean(self.tr_loss),
-                'epoch_avg_val_crossentropy_loss': np.mean(self.val_loss)
+                "epoch_tr_loss": tr_loss.numpy(),
+                'epoch_val_loss': val_loss.numpy(),
             }
+
         wandb.log(epoch_metrics, commit= False)
-        
-        print(f"EPOCH-{epoch} ===== TIME TAKEN-{np.around(time.time() - self.st_epoch, 2)}sec ===== {epoch_metrics}")
-        
+
+        time_delta = np.around(time.time() - self.start_epoch, 2)
+
+        print(f"EPOCH-{epoch} ===== TIME TAKEN-{time_delta}sec ===== {epoch_metrics}")
+
         return epoch_metrics
+
+    def on_batch_begin(self, batch_idx):
+        logger.info(f'batch-{batch_idx} started')
+
+    def on_batch_end(self, batch_idx, tr_loss, val_loss):
+
+        # logging per step
+        step_metrics= {
+                    'batch_idx': batch_idx.numpy(),
+                    "batch_tr_loss": tr_loss.numpy(),
+                    'batch_val_loss': val_loss.numpy(),
+                }
+        wandb.log(step_metrics)
+
+        print(f"lightning-logs ===== {step_metrics}")
+
+        return step_metrics
