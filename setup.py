@@ -17,7 +17,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "pathlib==1.0.1",
-        "wandb==0.9.4",
+        "wandb==0.9.5",
         # "tensorflow==2.3"
     ],
     classifiers=[

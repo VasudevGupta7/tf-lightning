@@ -36,7 +36,7 @@ class LightningModule(tf.keras.Model):
         """
         return
         
-    def get_gradients(self, loss, trainable_variables, batch_idx, optimizer_idx):
+    def backward(self, loss, trainable_variables, batch_idx, optimizer_idx):
         """[Optional]
         return the gradients of the tensors which were being watched
         Overwrite this method if necessary else you need not really take care of anything
@@ -64,18 +64,12 @@ class LightningModule(tf.keras.Model):
         Overwrite this method if necessary else you need not really take care of anything
         """
         for optimizer_idx in self.opt_indices:
-            tr_info = self.training_step(batch, batch_idx, optimizer_idx)
+            result = self.training_step(batch, batch_idx, optimizer_idx)
 
-            assert('loss' in tr_info)
-            tr_loss = tr_info.pop('loss')
-            
-            assert('trainable_variables' in tr_info)
-            trainable_variables = tr_info.pop('trainable_variables')
-
-            grads = self.get_gradients(tr_loss, trainable_variables, batch_idx, optimizer_idx)
+            grads = self.backward(result['loss'], result['trainable_variables'], batch_idx, optimizer_idx)
             self.optimizer_step(grads, trainable_variables, batch_idx, optimizer_idx)
 
-        return {'loss': tr_loss}
+        return result
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         """[Necessary]

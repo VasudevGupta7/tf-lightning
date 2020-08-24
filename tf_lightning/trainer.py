@@ -6,60 +6,11 @@ import tensorflow as tf
 from pathlib import Path
 import logging
 
-from tf_lightning.callbacks import Callback
+from tf_lightning.trainer_config import TrainerConfig
 
 logger = logging.getLogger(__name__)
 
-class Trainer(object):
-    
-    ## default args
-        
-    ## running on only 1 batch for only 1 epoch, No ckpts will be saved
-    fast_dev_run = False
-        
-    start_epoch = 1
-    epochs = 10
-        
-    # if specifying load_dir, it will load_ckpt else it won't load ckpt
-    load_dir = ''
-    # if loading ckpt, use this ard to check whether all saved objects are restored
-    assert_consumed = False
-        
-    # You need to specify ckpt, if you want to use other save options
-    checkpoint = None
-        
-    # Note: these options will be affected only if you specify checkpoint
-    save_only_final_ckpts = False
-    save_every_ckpt = False
-        
-    # by default, all tf_lightning related stuff will be saved in this dir
-    lightning_base_dir = 'lightning_stuff'
-    ckpt_dir = 'ckpts'
-    log_dir= 'logs'
-        
-    # Arguements related to ckpts
-    max_ckpt_to_keep = 3
-    keep_checkpoint_every_n_hours = None
-        
-    # You can override Callback class and customize methods
-    callbacks= Callback()
-
-    # Only Wandb is supported currently
-    logger = 'Wandb'
-        
-    # define distributed strategy
-    strategy = None
-        
-    # if bool(load_dir):
-    #     assert(Save)
-    
-    default_attrs= [
-            'fast_dev_run', 'start_epoch', 'epochs', 'load_dir',
-            'assert_consumed', 'checkpoint', 'save_only_final_ckpts',
-            'save_every_ckpt', 'saved_ckpts_dir', 'max_ckpt_to_keep',
-            'keep_checkpoint_every_n_hours', 'callbacks', 'enable_function',
-            'logger', 'strategy',
-                    ]
+class Trainer(TrainerConfig):
     
     def __init__(self, **kwargs):
         """
@@ -67,6 +18,9 @@ class Trainer(object):
         If you are specifying the checkpoint, every single checkpoint will be saved
         But if you want to save only final checkpoint, specify `save_every_ckpt` to True
         """
+        
+        super().__init__()
+        
         ## You can change the args specified above
         for attr in kwargs:
             assert(attr in self.default_attrs) 
@@ -98,18 +52,11 @@ class Trainer(object):
 
         # wrapping in tf.function for good performance
         self.train_step = tf.function(self.model.wrapped_train_step)
-        self.val_step = (self.model.validation_step)
-
-        # finally, just training
-        epoch_metrics = self.train(tr_dataset, val_dataset)
-
-        return epoch_metrics
-        
-    def train(self, tr_dataset, val_dataset):
+        self.val_step = tf.function(self.model.val_step)
         
         # just testing
         if self.fast_dev_run:
-            print("running on only 1 batch for only 1 epoch, ckpts won't be saved/loaded")
+            print("Single batch run, ckpts won't be saved/loaded")
             self.save_only_final_ckpts = False
             self.save_every_ckpt = False
             self.epochs = self.start_epoch
@@ -121,36 +68,58 @@ class Trainer(object):
             self.load_from_checkpoint(Path(self.lightning_base_dir, self.load_dir),
                                 self.assert_consumed)
 
-        self.callbacks.on_train_begin()
+        # finally, just training
+        history = self.train(tr_dataset, val_dataset)
+
+        return history
+        
+    def train(self, tr_dataset, val_dataset):
+
+        if bool(self.callbacks): 
+            self.callbacks.on_train_begin()
 
         for epoch in range(self.start_epoch, 1+self.epochs):
 
-            self.callbacks.on_epoch_begin(epoch)
+            if bool(self.callbacks): 
+                self.callbacks.on_epoch_begin(epoch)
+            
             batch_idx= tf.constant(0)
 
             for batch in tr_dataset:
-                self.callbacks.on_batch_begin(batch_idx)
+                if bool(self.callbacks): 
+                    self.callbacks.on_batch_begin(batch_idx)
 
                 batch_idx += tf.constant(1)
 
-                tr_info = self.train_step(batch, batch_idx)
+                tr_result = self.train_step(batch, batch_idx)
 
-                val_info= self.evaluate(val_dataset)
+                val_result= self.evaluate(val_dataset)
 
-                step_metrics= self.callbacks.on_batch_end(batch_idx, tr_info['loss'], val_info['loss'])
+                # logging stuff defined in training_step
+                if bool(tr_result.log) and (not self.fast_dev_run):
+                    self.lit_logger.log(tr_result.log)
+
+                # logging stuff defined in val_step
+                if bool(val_result.log) and (not self.fast_dev_run):
+                    self.lit_logger.log(val_result.log)
+
+                if bool(self.callbacks):
+                    step_metrics= self.callbacks.on_batch_end(batch_idx, tr_result['loss'], val_result['loss'])
 
             if self.save_every_ckpt: self.manager.save()
-            
-            tr_info = self.evaluate(tr_dataset)
 
-            epoch_metrics= self.callbacks.on_epoch_end(epoch, tr_info['loss'], val_info['loss'])
+            # tr_result = self.evaluate(tr_dataset)
 
-        self.callbacks.on_train_end()
+            # if bool(self.callbacks):
+            #     epoch_metrics= self.callbacks.on_epoch_end(epoch, tr_result['loss'], val_result['loss'])
+
+        if bool(self.callbacks): 
+            self.callbacks.on_train_end()
 
         if self.save_only_final_ckpts: 
             self.manager.save()
 
-        return epoch_metrics        
+        return
 
     def evaluate(self, val_dataset):
         
@@ -160,9 +129,9 @@ class Trainer(object):
 
             batch_idx += tf.constant(1)
 
-            val_info= self.val_step(batch, batch_idx, optimizer_idx=0)
+            val_result = self.val_step(batch, batch_idx, optimizer_idx=0)
 
-        return val_info
+        return val_result
 
     def load_from_checkpoint(self, ckpt, assert_consumed= False):
         # generally: self.manager.latest_checkpoint(ckpt_dir)

@@ -19,18 +19,24 @@ class TestModel(tl.LightningModule):
         return tf.keras.optimizers.Adam(0.1),
 
     def training_step(self, batch, batch_idx, optimizer_idx):
+        
         pred = self(batch)
         loss = tf.reduce_mean(pred)
-        trainable_variables = self.model.trainable_variables
-        return {
-            'loss': loss,
-            'trainable_variables': trainable_variables
-            }
+        
+        result = tl.TrainResult(loss=loss, trainable_variables=self.model.trainable_variables)
+        result.log({'batch_idx': batch_idx, 'loss': loss})
+        
+        return result
 
     def validation_step(self, batch, batch_idx, optimizer_idx):
+        
         pred = self(batch)
         loss = tf.reduce_mean(pred)
-        return {'loss': loss}
+        
+        result = tl.ValResult(loss=loss)
+        result.log({'batch_idx': batch_idx, 'loss': loss})
+        
+        return result
 
 class TestDataLoader(tl.LightningDataModule):
     
@@ -51,9 +57,6 @@ class TestDataLoader(tl.LightningDataModule):
         return dataset
 
 if __name__ == '__main__':
-    
-    import wandb
-    wandb.init()
     
     model = TestModel()
     
