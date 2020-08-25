@@ -3,11 +3,11 @@
 @author: vasudevgupta
 """
 import logging
-
+from abc import ABC, abstractmethod
 logger = logging.getLogger(__name__)
 
 
-class LightningDataModule(object):
+class LightningDataModule(ABC):
 
     def __init__(self):
         pass
@@ -26,6 +26,7 @@ class LightningDataModule(object):
         """
         pass
 
+    @abstractmethod
     def train_dataloader(self):
         """
         This method return `tf.data.Dataset` object for training data

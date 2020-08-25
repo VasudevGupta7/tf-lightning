@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="tf_lightning",
     version=tf_lightning.__version__,
-    author=tf_lightning.__author__ ,
+    author=tf_lightning.__author__,
     author_email=tf_lightning.__author_email__,
     description="Light wrapper for models training in tf2",
     long_description=long_description,

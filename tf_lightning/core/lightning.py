@@ -4,11 +4,12 @@
 """
 import tensorflow as tf
 import logging
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
 
-class LightningModule(tf.keras.Model):
+class LightningModule(ABC, tf.keras.Model):
 
     def __init__(self):
         """
@@ -17,19 +18,13 @@ class LightningModule(tf.keras.Model):
         """
         super().__init__()
 
-        self.optimizer_0, *b = self.configure_optimizers()
-        self.opt_indices = [0]
-
-        if bool(b):
-            self.optimizer_1 = b[0]
-            self.opt_indices = [0, 1]
-
     def call(self, dataset):
         """[Optional]
         Use it just like you use `call` method of `tf.keras.Model` class
         """
         return
 
+    @abstractmethod
     def configure_optimizers(self):
         """[Necessary]
         You can return either 1 or 2 optimizer depending on your model requirements
@@ -56,24 +51,7 @@ class LightningModule(tf.keras.Model):
         elif optimizer_idx == 1:
             self.optimizer_1.apply_gradients(zip(grads, trainable_variables))
 
-    def wrapped_train_step(self, batch, batch_idx):
-        """[Optional]
-        This method is simply wrapping everything:
-            - forward propogation
-            - backward propogation
-            - parameters update
-        Overwrite this method if necessary else you need not really take care of anything
-        """
-        for optimizer_idx in self.opt_indices:
-            result = self.training_step(batch, batch_idx, optimizer_idx)
-
-            grads = self.backward(
-                result['loss'], result['trainable_variables'], batch_idx, optimizer_idx)
-            self.optimizer_step(grads, trainable_variables,
-                                batch_idx, optimizer_idx)
-
-        return result
-
+    @abstractmethod
     def training_step(self, batch, batch_idx, optimizer_idx):
         """[Necessary]
         Everything is being handled by tf_lightning :)
