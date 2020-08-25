@@ -9,7 +9,9 @@ It's currently supporting simple features for training models. I will add more f
 - [x] Single GPU training with much less code
 - [ ] Distributed Training over multiple GPU's in single machine
 - [ ] Gradient Accumulation
-- [ ] Mixed precision based training
+- [x] Mixed precision based training
+- [ ] Tensorboard integration
+- [x] Wandb integration
 
 ## Installation
 

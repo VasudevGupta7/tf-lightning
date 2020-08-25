@@ -19,17 +19,6 @@ class Trainer(TrainerConfig, TrainingLoop):
     # if loading ckpt, use this ard to check whether all saved objects are restored
     assert_consumed = False
 
-    # if bool(load_dir):
-    #     assert(Save)
-
-    default_attrs = [
-        'fast_dev_run', 'start_epoch', 'epochs', 'load_dir',
-        'assert_consumed', 'checkpoint', 'save_only_final_ckpts',
-        'save_every_ckpt', 'saved_ckpts_dir', 'max_ckpt_to_keep', 'project_name',
-        'config', 'dir', 'sync_tensorboard', 'save_code', 'lit_logger',
-        'keep_checkpoint_every_n_hours', 'callbacks', 'enable_function',
-    ]
-
     def __init__(self, **kwargs):
         """
         If you won't specify the checkpoint object; nothing will be saved
@@ -50,8 +39,10 @@ class Trainer(TrainerConfig, TrainingLoop):
         lightning_data_module.prepare_data()
 
         lightning_data_module.setup()
-        tr_dataset = lightning_data_module.train_dataloader()
-        val_dataset = lightning_data_module.val_dataloader()
+
+        if not self.enable_distributed_training:
+            tr_dataset = lightning_data_module.train_dataloader()
+            val_dataset = lightning_data_module.val_dataloader()
 
         # Inside TrainingLoop
         super().fit(lit_module=lightning_module)
