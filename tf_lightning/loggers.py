@@ -4,8 +4,9 @@
 """
 import wandb
 
+
 class WandbLogger(object):
-    
+
     def __init__(self,
                  project_name=None,
                  config=None,
