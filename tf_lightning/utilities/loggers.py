@@ -28,6 +28,19 @@ class WandbLogger(object):
         wandb.log(info, commit=commit, step=step)
 
 class TBSummary(object):
+    """
+    Parameters:
+        logdir: string
+            Directory where all of the events will be written out.
+        expt_name: string
+            Optional; name for a particular summary, ex. training.
+    Attributes:
+        writer: tf.summary.FileWriter
+            The writer that write `tf_summary` into a tensorflow event file.
+    Methods:
+        log: step=<step number>, metric_name1=<metric_value>, metric_name2=<metric_value>, ......
+             metric value can be a scalar, numpy array (image), matplotlib figure object or a iterable object containing multiple values.
+    """
     def __init__(self, logdir, expt_name=""):
         log_path = os.path.join(logdir, expt_name)
         self.writer = tf.summary.create_file_writer(log_path)
@@ -40,12 +53,12 @@ class TBSummary(object):
             else:
                 self._add_single(name, value, step)
     
-    def add_scalar(self, name, value, step=None):
+    def _add_scalar(self, name, value, step=None):
         with self.writer.as_default():
             tf.summary.scalar(name=name, data=value, step=step)
             self.writer.flush()
 
-    def plot_to_image(self, figure):
+    def _plot_to_image(self, figure):
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
         plt.close(figure)
@@ -54,9 +67,9 @@ class TBSummary(object):
         image = tf.expand_dims(image, 0)
         return image
 
-    def add_image(self, name, image, step=None):
+    def _add_image(self, name, image, step=None):
         if isinstance(image, Figure):
-            image = self.plot_to_image(image)
+            image = self._plot_to_image(image)
         elif isinstance(image, np.ndarray):
             image = image
         else:
@@ -67,9 +80,9 @@ class TBSummary(object):
 
     def _add_single(self, name, value, step=None):
         if np.isscalar(value):
-            self.add_scalar(name, value, step)
+            self._add_scalar(name, value, step)
         elif isinstance(value, np.ndarray) or isinstance(value, Figure):
-            self.add_image(name, value, step)
+            self._add_image(name, value, step)
         else:
             raise ValueError("Incorrect type. Allowable datatypes are scalars, numpy ndarray, matplotlib figures")
 
