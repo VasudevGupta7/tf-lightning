@@ -1,10 +1,6 @@
-"""Lightning the tf2 DataLoader part
+# __author__ = 'Vasudev Gupta'
 
-@author: vasudevgupta
-"""
-import logging
 from abc import ABC, abstractmethod
-logger = logging.getLogger(__name__)
 
 
 class LightningDataModule(ABC):
@@ -20,26 +16,25 @@ class LightningDataModule(ABC):
         pass
 
     def setup(self):
-        """This method if preferrable for loading, splitting dataset into train,
-        test, val and associating to this dataloader object
+        """This method is preferrable for loading, splitting dataset into train,
+        test, val and associating them to this dataloader object
         """
         pass
 
     @abstractmethod
     def train_dataloader(self):
         """
-        This method return `tf.data.Dataset` object for training data
+        returns:
+            `tf.data.Dataset` object
         """
         return
 
     def val_dataloader(self):
         """
-        This method return `tf.data.Dataset` object for val data
+        returns:
+            `tf.data.Dataset` object
         """
         return
 
     def test_dataloader(self):
-        """
-        This method return `tf.data.Dataset` object for test data
-        """
-        return
+        raise ValueError('Currently NotImplemented')

@@ -1,10 +1,8 @@
-"""Configuration file for Trainer
-
-@author: vasudevgupta
-"""
+# __author__ = 'Vasudev Gupta'
 
 
 class TrainerConfig(object):
+    # there is no reason of keeping this. I am collecting all the possible args for `Trainer` initialization
 
     default_attrs = [
         'fast_dev_run', 'start_epoch', 'epochs', 'load_dir',
@@ -13,5 +11,4 @@ class TrainerConfig(object):
         'config', 'dir', 'sync_tensorboard', 'save_code', 'lit_logger',
         'keep_checkpoint_every_n_hours', 'callbacks', 'policy_name',
         'enable_precision_training', 'enable_distributed_training',
-
     ]

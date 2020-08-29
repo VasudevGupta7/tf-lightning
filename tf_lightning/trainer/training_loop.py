@@ -1,13 +1,11 @@
-"""
+# __author__ = 'Vasudev Gupta'
 
-@author: vasudevgupta
-"""
 from pathlib import Path
 import tensorflow as tf
 
-from tf_lightning.utilities.callbacks import Callback
-from tf_lightning.utilities.loggers import WandbLogger
-from tf_lightning.trainer.checkpointer import Checkpointer
+from tf_lightning.callbacks.lit_callbacks import Callback
+from tf_lightning.loggers.wandb import WandbLogger
+from tf_lightning.callbacks.checkpointer import Checkpointer
 from tf_lightning.trainer.precision_training import PrecisionTraining
 from tf_lightning.trainer.distributed_training import DistributedTraining
 
@@ -20,14 +18,13 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
     # wandb related arguments
     project_name = 'tf-lightning-project'
     config = {}
-   
 
     # Related to mixed-precision based training
     policy_name = 'mixed_float16'
 
     # running on only 1 batch for only 1 epoch, No ckpts will be saved
     fast_dev_run = False
-    
+
     enable_callbacks = False
 
     def __init__(self):
@@ -38,11 +35,10 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
         # Wandb is supported by default
         self.lit_logger = WandbLogger(project_name=self.project_name,
                                       config=self.config,
-                                     
-                                     )
+                                      logdir=self.lightning_base_dir)
 
-        Checkpointer()
-        PrecisionTraining(self.policy_name)
+        Checkpointer.__init__(self)
+        PrecisionTraining.__init__(self, self.policy_name)
 
     def fit(self, lit_module):
 
@@ -80,11 +76,11 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
                 eval_result = self.evaluate(val_dataset)
 
                 # self._batch_end(tr_result, eval_result)
-                
+
                 # if bool(self.enable_callbacks):
                 #     step_metrics = self.callbacks.on_batch_end(
                 #         batch_idx, tr_result['loss'], val_result['loss'])
-                                    
+
             self._epoch_end()
 
             # if bool(self.enable_callbacks):
@@ -93,24 +89,24 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
             #         epoch, tr_result['loss'], val_result['loss'])
 
         self._training_end()
-        
+
         # if bool(self.enable_callbacks):
         #     self.callbacks.on_train_end()
 
         return
 
-    def _batch_end(self, tr_result, val_result):
-        
-        tr_logs = tr_result.get_log()
-        val_logs = val_result.get_log()
-        
+    def _batch_end(self, tr_result, eval_result):
+
+        tr_logs = tr_result.get_log() if bool(tr_result) else None
+        eval_logs = eval_result.get_log() if bool(eval_result) else None
+
         # logging stuff defined in training_step
         if bool(tr_logs) and (not self.fast_dev_run):
             self.lit_logger.log(tr_logs)
-            
+
             # logging stuff defined in val_step
-        if bool(val_logs) and (not self.fast_dev_run):
-            self.lit_logger.log(val_logs)
+        if bool(eval_logs) and (not self.fast_dev_run):
+            self.lit_logger.log(eval_logs)
 
     def _epoch_end(self):
         if self.save_every_ckpt:
@@ -149,7 +145,7 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
         for optimizer_idx in self.opt_indices:
 
             result = self.training_step(batch, batch_idx, optimizer_idx)
-            
+
             grads = self.backward(
                 result['minimize'], result['trainable_variables'], batch_idx, optimizer_idx)
 
@@ -173,4 +169,3 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
         self.backward = lit_module.backward
 
         self.optimizer_step = lit_module.optimizer_step
-

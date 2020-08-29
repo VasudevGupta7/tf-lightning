@@ -1,8 +1,11 @@
+# __author__ = 'Vasudev Gupta'
+
 import tf_lightning as tl
 import tensorflow as tf
 
 
 class TestModel(tl.LightningModule):
+    # just a random model with random dataset
 
     def __init__(self):
         # simple test model
@@ -26,7 +29,7 @@ class TestModel(tl.LightningModule):
 
         result = tl.TrainResult(
             minimize=loss, trainable_variables=self.model.trainable_variables)
-        
+
         result.log_dict({'batch_idx': batch_idx, 'loss': loss})
 
         return dict(minimize=loss, trainable_variables=self.model.trainable_variables)
@@ -43,9 +46,9 @@ class TestModel(tl.LightningModule):
 
 
 class TestDataLoader(tl.LightningDataModule):
+    # using random dataset
 
     def __init__(self):
-        # random dataset for testing
         self.batch_size = 32
 
     def setup(self):
@@ -69,7 +72,6 @@ if __name__ == '__main__':
 
     dataloader = TestDataLoader()
 
-    trainer = tl.Trainer(fast_dev_run=False, enable_precision_training=True, 
-                         policy_name='float32')
+    trainer = tl.Trainer(fast_dev_run=False)
 
     trainer.fit(model, dataloader)

@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class Callback(object):
+    """
+    You can define your own callbacks and pass it while initializing Trainer class
+
+    """
 
     def __init__(self):
         """

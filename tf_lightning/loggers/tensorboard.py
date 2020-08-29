@@ -1,8 +1,4 @@
-"""Logger class for Wandb and Tensorboard
-
-@author: vasudevgupta
-"""
-import wandb
+# Tensorboard logger
 
 import tensorflow as tf
 import numpy as np
@@ -11,24 +7,6 @@ import io
 
 from pathlib import Path
 
-class WandbLogger(object):
-
-    def __init__(self,
-                 project_name,
-                 config,
-                 ):
-
-        wandb.init(project=project_name,
-                   config=config
-                   
-        )
-
-    def log(self, **kwargs):
-
-        commit = kwargs.pop('commit', True)
-        step = kwargs.pop('step', None)
-
-        wandb.log(kwargs, commit=commit, step=step)
 
 class TBSummary(object):
     """
@@ -38,12 +16,13 @@ class TBSummary(object):
         expt_name: string
             Optional; name for a particular summary, ex. training.
     Attributes:
-        writer: tf.summary.FileWriter
+        writer: tf.summary.create_file_writer
             The writer that write `tf_summary` into a tensorflow event file.
     Methods:
         log: step=<step number>, metric_name1=<metric_value>, metric_name2=<metric_value>, ......
              metric value can be a scalar, numpy array (image), matplotlib figure object or a iterable object containing multiple values.
     """
+
     def __init__(self, logdir, expt_name=""):
         log_path = Path(logdir, expt_name)
         self.writer = tf.summary.create_file_writer(log_path)
@@ -55,7 +34,7 @@ class TBSummary(object):
                 self._add_multiple(name, value, step)
             else:
                 self._add_single(name, value, step)
-    
+
     def _add_scalar(self, name, value, step=None):
         with self.writer.as_default():
             tf.summary.scalar(name=name, data=value, step=step)
@@ -76,7 +55,8 @@ class TBSummary(object):
         elif isinstance(image, np.ndarray):
             image = image
         else:
-            raise ValueError("Incorrect Image type. Type must be numpy array or matplotlib figure")
+            raise ValueError(
+                "Incorrect Image type. Type must be numpy array or matplotlib figure")
         with self.writer.as_default():
             tf.summary.image(name, image, step=step)
             self.writer.flush()
@@ -87,7 +67,8 @@ class TBSummary(object):
         elif isinstance(value, np.ndarray) or isinstance(value, Figure):
             self._add_image(name, value, step)
         else:
-            raise ValueError("Incorrect type. Allowable datatypes are scalars, numpy ndarray, matplotlib figures")
+            raise ValueError(
+                "Incorrect type. Allowable datatypes are scalars, numpy ndarray, matplotlib figures")
 
     def _add_multiple(self, name, values, step=None):
         for i, value in enumerate(values):

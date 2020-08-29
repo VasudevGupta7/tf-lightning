@@ -1,22 +1,17 @@
-"""Trainer Class
+# __author__ = 'Vasudev Gupta'
 
-@author: vasudevgupta
-"""
 import tensorflow as tf
 from pathlib import Path
-import logging
 
 from tf_lightning.trainer.training_loop import TrainingLoop
 from tf_lightning.trainer.trainer_config import TrainerConfig
-
-logger = logging.getLogger(__name__)
 
 
 class Trainer(TrainerConfig, TrainingLoop):
 
     # if specifying load_dir, it will load_ckpt else it won't load ckpt
     load_dir = ''
-    # if loading ckpt, use this ard to check whether all saved objects are restored
+    # if loading ckpt, use this arg to check whether all saved objects are restored
     assert_consumed = False
 
     def __init__(self, **kwargs):
@@ -25,13 +20,12 @@ class Trainer(TrainerConfig, TrainingLoop):
         If you are specifying the checkpoint, every single checkpoint will be saved
         But if you want to save only final checkpoint, specify `save_every_ckpt` to True
         """
-
         # You can change the args specified above
         for attr in kwargs:
             assert(attr in self.default_attrs)
             setattr(self, attr, kwargs[attr])
 
-        TrainingLoop()
+        TrainingLoop.__init__(self)
 
     def fit(self, lightning_module, lightning_data_module):
 
@@ -58,9 +52,9 @@ class Trainer(TrainerConfig, TrainingLoop):
                                       self.assert_consumed)
 
         # finally, just training
-        history = self.train(tr_dataset, val_dataset)
+        info = self.train(tr_dataset, val_dataset)
 
-        return history
+        return info
 
     def overwrite_config_for_fast_dev_run(self):
         print("[fast-dev-run mode enabled] :: Model will run on single batch, ckpts won't be saved/loaded")

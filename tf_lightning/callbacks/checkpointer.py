@@ -1,9 +1,10 @@
-"""
+# __author__ = 'Vasudev Gupta'
 
-@author: vasudevgupta
-"""
 import tensorflow as tf
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Checkpointer(object):
@@ -40,7 +41,6 @@ class Checkpointer(object):
 
     def load_from_checkpoint(self, ckpt, assert_consumed=False):
         # generally: self.manager.latest_checkpoint(ckpt_dir)
-
         status = self.checkpoint.restore(ckpt)
         logger.info('ckpt_restored')
 

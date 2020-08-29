@@ -1,9 +1,7 @@
-"""TrainResult and ValResult Class
-
-@author: vasudevgupta
-"""
+# __author__ = 'Vasudev Gupta'
 
 class Result(dict):
+    # parent class of TrainResult & EvalResult
 
     def __init__(self, **kwargs):
 
@@ -26,6 +24,14 @@ class Result(dict):
 
 
 class TrainResult(Result):
+    """[Compulsary]
+    Just use this class at the end of your training step..
+    Both arguments are compulsary
+
+    Args:
+        minimize: pass the loss, you want to minimize
+        trainable_variables: pass the variables w.r.t which you want to find gradients
+    """
 
     def __init__(self, minimize, trainable_variables):
 
@@ -34,6 +40,11 @@ class TrainResult(Result):
 
 
 class EvalResult(Result):
+    """[Optional]
+    Whatever args you will be passing here, will be passed as args in lit-callbacks method
+    Args:
+        minimize: You can simply pass the loss, if you wish..
+    """
 
     def __init__(self, minimize):
 

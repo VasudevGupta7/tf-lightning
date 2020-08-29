@@ -1,7 +1,5 @@
-"""Lightning training for TF-2 with complete flexibilty
+# __author__ = 'Vasudev Gupta'
 
-@author: vasudevgupta
-"""
 import tensorflow as tf
 import logging
 from abc import ABC, abstractmethod
@@ -10,31 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 class LightningModule(ABC, tf.keras.Model):
+    """
+    Inherit your model class from this class simply; and you can use Trainer class simply
+    """
 
     def __init__(self):
-        """
-        Inherit your model class from this class simply; 
-        and you are good to use Trainer class
-        """
         optimizer, opt_indices = self._get_optimizer()
 
         self.opt_indices = opt_indices
         for i in opt_indices:
             setattr(self, f"optimizer_{i}", optimizer[i])
-        
+
         super().__init__(self)
-        
-    def _get_optimizer(self):
-        # called inside integrate_train_step method
-        optimizers = self.configure_optimizers()
-
-        if isinstance(optimizers, tf.keras.optimizers.Optimizer):
-            opt_indices = [0]
-
-        elif isinstance(optimizers, (tuple, list)):
-            opt_indices = list(range(len(optimizers)))
-
-        return optimizers, opt_indices
 
     def call(self, dataset):
         """[Optional]
@@ -46,14 +31,17 @@ class LightningModule(ABC, tf.keras.Model):
     def configure_optimizers(self):
         """[Necessary]
         You can return either 1 or 2 optimizer depending on your model requirements
-        just put comma `,` after optimizer in case you return single optimizer
         """
         return
 
     def backward(self, loss, trainable_variables, batch_idx, optimizer_idx):
         """[Optional]
-        return the gradients of the tensors which were being watched
-        Overwrite this method if necessary else you need not really take care of anything
+        return the gradients of all the trainable_variables which you pass as argument
+        Args:
+            loss: loss tensor you want to minimize
+            trainable_variables: variables w.r.t which you want to calculate your gradients
+            batch_idx: No need to chage this
+            optimizer_idx: Generally, No need to do anything with this
         """
         grads = tf.gradients(loss, trainable_variables)
         return grads
@@ -61,7 +49,11 @@ class LightningModule(ABC, tf.keras.Model):
     def optimizer_step(self, grads, trainable_variables, batch_idx, optimizer_idx):
         """[Optional]
         Parameters update stage
-        Overwrite this method if necessary else you need not really take care of anything
+        Args:
+            grads: gradients
+            trainable_variables: variables w.r.t which you want to calculate your gradients
+            batch_idx: No need to chage this
+            optimizer_idx: This is based on how you are returning optimizers through `configurble_optimizers`
         """
         if optimizer_idx == 0:
             self.optimizer_0.apply_gradients(zip(grads, trainable_variables))
@@ -80,7 +72,7 @@ class LightningModule(ABC, tf.keras.Model):
         So all rules of working with `tf.function` in defining training loop holds here...
 
         must specify `minimize`, `trainable_variables` in `TrainResult`
-        
+
         additionally you can specify what to log using `log` attribute of `TrainResult`
         """
         return
@@ -100,4 +92,15 @@ class LightningModule(ABC, tf.keras.Model):
         return
 
     def test_step(self, batch, batch_idx, optimizer_idx):
-        return
+        raise ValueError('Currently NotImplemented')
+
+    def _get_optimizer(self):
+        # used in `__init__` method
+        optimizers = self.configure_optimizers()
+
+        if isinstance(optimizers, tf.keras.optimizers.Optimizer):
+            opt_indices = [0]
+        elif isinstance(optimizers, (tuple, list)):
+            opt_indices = list(range(len(optimizers)))
+
+        return optimizers, opt_indices
