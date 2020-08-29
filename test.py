@@ -29,7 +29,7 @@ class TestModel(tl.LightningModule):
         
         result.log_dict({'batch_idx': batch_idx, 'loss': loss})
 
-        return result #dict(minimize=loss, trainable_variables=self.model.trainable_variables)
+        return dict(minimize=loss, trainable_variables=self.model.trainable_variables)
 
     def validation_step(self, batch, batch_idx, optimizer_idx):
 
@@ -39,7 +39,7 @@ class TestModel(tl.LightningModule):
         result = tl.EvalResult(minimize=loss)
         result.log_dict({'batch_idx': batch_idx, 'loss': loss})
 
-        return result #dict(minimize=loss)
+        return dict(minimize=loss)
 
 
 class TestDataLoader(tl.LightningDataModule):
@@ -69,6 +69,7 @@ if __name__ == '__main__':
 
     dataloader = TestDataLoader()
 
-    trainer = tl.Trainer(fast_dev_run=True)
+    trainer = tl.Trainer(fast_dev_run=False, enable_precision_training=True, 
+                         policy_name='float32')
 
     trainer.fit(model, dataloader)

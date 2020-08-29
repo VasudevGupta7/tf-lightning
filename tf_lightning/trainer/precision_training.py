@@ -72,7 +72,7 @@ class PrecisionTraining(object):
             grads = getattr(
                 self, f"optimizer_{optimizer_idx}").get_unscaled_gradients(grads)
 
-            self.optimizer_step(grads, trainable_variables,
+            self.optimizer_step(grads, result['trainable_variables'],
                                 batch_idx, optimizer_idx)
 
         return result
