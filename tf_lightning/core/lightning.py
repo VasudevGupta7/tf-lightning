@@ -16,7 +16,25 @@ class LightningModule(ABC, tf.keras.Model):
         Inherit your model class from this class simply; 
         and you are good to use Trainer class
         """
-        super().__init__()
+        optimizer, opt_indices = self._get_optimizer()
+
+        self.opt_indices = opt_indices
+        for i in opt_indices:
+            setattr(self, f"optimizer_{i}", optimizer[i])
+        
+        super().__init__(self)
+        
+    def _get_optimizer(self):
+        # called inside integrate_train_step method
+        optimizers = self.configure_optimizers()
+
+        if isinstance(optimizers, tf.keras.optimizers.Optimizer):
+            opt_indices = [0]
+
+        elif isinstance(optimizers, (tuple, list)):
+            opt_indices = list(range(len(optimizers)))
+
+        return optimizers, opt_indices
 
     def call(self, dataset):
         """[Optional]
@@ -61,8 +79,9 @@ class LightningModule(ABC, tf.keras.Model):
         But remember, I am wrapping training_step somewhere in `tf.function`,
         So all rules of working with `tf.function` in defining training loop holds here...
 
-        - must return a dictionary with .....
-        `loss`, `trainable_variables` as keys and their values as values of dictionary
+        must specify `minimize`, `trainable_variables` in `TrainResult`
+        
+        additionally you can specify what to log using `log` attribute of `TrainResult`
         """
         return
 
@@ -74,8 +93,9 @@ class LightningModule(ABC, tf.keras.Model):
         Remember, I am wrapping this method somewhere in `tf.function`,
         So all rules of working with `tf.function` holds here...
 
-        - must return a dictionary with .....
-        `loss` as key
+        you may specify `loss` in `EvalResult`
+
+        additionally you can specify what to log using `log` attribute of EvalResult`
         """
         return
 

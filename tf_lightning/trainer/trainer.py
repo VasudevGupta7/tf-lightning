@@ -31,7 +31,7 @@ class Trainer(TrainerConfig, TrainingLoop):
             assert(attr in self.default_attrs)
             setattr(self, attr, kwargs[attr])
 
-        super().__init__()
+        TrainingLoop()
 
     def fit(self, lightning_module, lightning_data_module):
 
@@ -66,7 +66,7 @@ class Trainer(TrainerConfig, TrainingLoop):
         print("[fast-dev-run mode enabled] :: Model will run on single batch, ckpts won't be saved/loaded")
         self.save_only_final_ckpts = False
         self.save_every_ckpt = False
-        self.epochs = self.start_epoch
+        self.epochs = self.start_epoch + 1
         self.load_dir = ''
 
     @classmethod

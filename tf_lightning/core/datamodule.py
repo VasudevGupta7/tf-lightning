@@ -16,13 +16,12 @@ class LightningDataModule(ABC):
         """This method is preferrable to prepare dataset
             - downloading
             - saving
-            - loading
         """
         pass
 
     def setup(self):
-        """This method if preferrable for splitting dataset into train, test, val
-        and associating to this dataloader object
+        """This method if preferrable for loading, splitting dataset into train,
+        test, val and associating to this dataloader object
         """
         pass
 

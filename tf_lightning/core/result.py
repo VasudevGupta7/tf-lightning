@@ -2,10 +2,8 @@
 
 @author: vasudevgupta
 """
-from typing import Dict
 
-
-class Result(Dict):
+class Result(dict):
 
     def __init__(self, **kwargs):
 
@@ -29,14 +27,14 @@ class Result(Dict):
 
 class TrainResult(Result):
 
-    def __init__(self, loss, trainable_variables):
+    def __init__(self, minimize, trainable_variables):
 
-        super().__init__(loss=loss,
+        super().__init__(minimize=minimize,
                          trainable_variables=trainable_variables)
 
 
 class EvalResult(Result):
 
-    def __init__(self, loss):
+    def __init__(self, minimize):
 
-        super().__init__(loss=loss)
+        super().__init__(minimize=minimize)

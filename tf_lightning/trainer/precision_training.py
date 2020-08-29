@@ -6,33 +6,31 @@
 import tensorflow as tf
 from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
-from abc import ABC, abstractmethod
 
-
-class PrecisionTraining(ABC):
+class PrecisionTraining(object):
 
     enable_precision_training = False
 
-    @abstractmethod
     def optimizer_step(self, grads, trainable_variables, batch_idx, optimizer_idx):
-
-    @abstractmethod
+        raise NotImplementedError
+        
     def backward(self, loss, trainable_variables, batch_idx, optimizer_idx):
-
-    @abstractmethod
+        raise NotImplementedError
+        
     def training_step(batch, batch_idx, optimizer_idx):
-
-    @property
-    def opt_indices(self):
         raise NotImplementedError
+        
+    # @property
+    # def opt_indices(self):
+    #     raise NotImplementedError
 
-    @property
-    def optimizer_0(self):
-        raise NotImplementedError
+    # @property
+    # def optimizer_0(self):
+    #     raise NotImplementedError
 
-    @property
-    def optimizer_1(self):
-        raise NotImplementedError
+    # @property
+    # def optimizer_1(self):
+    #     raise NotImplementedError
 
     def __init__(self, policy_name='mixed_float16'):
         """
@@ -47,7 +45,7 @@ class PrecisionTraining(ABC):
 
             You need to change output layer precision to `float32` by yourself
         """
-        if enable_precision_training:
+        if self.enable_precision_training:
             policy = mixed_precision.Policy(policy_name)
             mixed_precision.set_policy(policy)
 
@@ -65,10 +63,8 @@ class PrecisionTraining(ABC):
 
             result = self.training_step(batch, batch_idx, optimizer_idx)
 
-            result['loss']
-
             scaled_loss = getattr(
-                self, f"optimizer_{optimizer_idx}").get_scaled_loss(result['loss'])
+                self, f"optimizer_{optimizer_idx}").get_scaled_loss(result['minimize'])
 
             grads = self.backward(
                 scaled_loss, result['trainable_variables'], batch_idx, optimizer_idx)
