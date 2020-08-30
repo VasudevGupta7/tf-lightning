@@ -27,22 +27,21 @@ class TestModel(tl.LightningModule):
         pred = self(batch)
         loss = tf.reduce_mean(pred)
 
+        log = {'batch_idx': batch_idx, 'loss': loss}
         result = tl.TrainResult(
-            minimize=loss, trainable_variables=self.model.trainable_variables)
+            loss, self.model.trainable_variables, log=log)
 
-        result.log_dict({'batch_idx': batch_idx, 'loss': loss})
-
-        return dict(minimize=loss, trainable_variables=self.model.trainable_variables)
+        return result
 
     def validation_step(self, batch, batch_idx, optimizer_idx):
 
         pred = self(batch)
         loss = tf.reduce_mean(pred)
 
-        result = tl.EvalResult(minimize=loss)
-        result.log_dict({'batch_idx': batch_idx, 'loss': loss})
+        log = {'batch_idx': batch_idx, 'loss': loss}
+        result = tl.EvalResult(loss, log=log)
 
-        return dict(minimize=loss)
+        return result
 
 
 class TestDataLoader(tl.LightningDataModule):

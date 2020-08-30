@@ -43,7 +43,7 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
     def fit(self, lit_module):
 
         # adding methods of lightning-module to trainer
-        self.integrate_train_step(lit_module)
+        self.integrate_litmodule(lit_module)
 
         self.wrapped_train_step = self._wrapped_train_step
         self.val_step = self.validation_step
@@ -140,7 +140,6 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
             - forward propogation
             - backward propogation
             - parameters update
-        Overwrite this method if necessary else you need not really take care of anything
         """
         for optimizer_idx in self.opt_indices:
 
@@ -154,7 +153,7 @@ class TrainingLoop(Checkpointer, PrecisionTraining, DistributedTraining):
 
         return result
 
-    def integrate_train_step(self, lit_module):
+    def integrate_litmodule(self, lit_module):
         # this will run only once
         # called inside fit method
 
