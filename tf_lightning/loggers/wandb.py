@@ -1,8 +1,6 @@
-"""Wandb logging
+# __author__ = 'Vasudev Gupta'
 
-@author: vasudevgupta
-"""
-
+import os
 import wandb
 import numpy as np
 
@@ -22,6 +20,10 @@ class WandbLogger(object):
                  logdir,
                  project_name='lightning-project',
                  config=None):
+
+        local_dirs = os.listdir()
+        if logdir not in local_dirs:
+            os.makedirs(logdir)
 
         wandb.init(project=project_name,
                    config=config,

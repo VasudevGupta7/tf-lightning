@@ -3,16 +3,17 @@
 import tensorflow as tf
 from pathlib import Path
 
+from tf_lightning.callbacks.lit_callbacks import Callback
+
 from tf_lightning.trainer.training_loop import TrainingLoop
 from tf_lightning.trainer.trainer_config import TrainerConfig
+from tf_lightning.loggers.wandb import WandbLogger
+from tf_lightning.callbacks.checkpointer import Checkpointer
+from tf_lightning.trainer.precision_training import PrecisionTraining
+from tf_lightning.trainer.distributed_training import DistributedTraining
 
 
-class Trainer(TrainerConfig, TrainingLoop):
-
-    # if specifying load_dir, it will load_ckpt else it won't load ckpt
-    load_dir = ''
-    # if loading ckpt, use this arg to check whether all saved objects are restored
-    assert_consumed = False
+class Trainer(TrainerConfig, TrainingLoop, PrecisionTraining, DistributedTraining, Checkpointer):
 
     def __init__(self, **kwargs):
         """
@@ -20,12 +21,21 @@ class Trainer(TrainerConfig, TrainingLoop):
         If you are specifying the checkpoint, every single checkpoint will be saved
         But if you want to save only final checkpoint, specify `save_every_ckpt` to True
         """
-        # You can change the args specified above
-        for attr in kwargs:
-            assert(attr in self.default_attrs)
-            setattr(self, attr, kwargs[attr])
 
-        TrainingLoop.__init__(self)
+        for key in kwargs:
+            assert(hasattr(self, key))
+            setattr(self, key, kwargs[key])
+
+        if self.enable_loggers and 'loggers' not in kwargs:
+            self.loggers = [WandbLogger(project_name=self.project_name,
+                                        config=self.litmodule_config,
+                                        logdir=self.lightning_base_dir)]
+
+        if not self.callbacks:
+            self.enable_callbacks = False
+
+        PrecisionTraining.__init__(self)
+        DistributedTraining.__init__(self)
 
     def fit(self, lightning_module, lightning_data_module):
 
@@ -38,27 +48,32 @@ class Trainer(TrainerConfig, TrainingLoop):
             tr_dataset = lightning_data_module.train_dataloader()
             val_dataset = lightning_data_module.val_dataloader()
 
-        # Inside TrainingLoop
-        super().fit(lit_module=lightning_module)
+        TrainingLoop.fit(self, lightning_module)
 
-        # testing mode
+        # code-testing mode
         if self.fast_dev_run:
             tr_dataset = tr_dataset.take(1)
             val_dataset = val_dataset.take(1)
             self.overwrite_config_for_fast_dev_run()
 
         if self.load_dir:
-            self.load_from_checkpoint(Path(self.lightning_base_dir, self.load_dir),
+            ckpt_name = tf.train.latest_checkpoint(
+                Path(self.lightning_base_dir, self.load_dir))
+            self.load_from_checkpoint(self.checkpoint, ckpt_name,
                                       self.assert_consumed)
 
-        # finally, just training
+        # finally training
         info = self.train(tr_dataset, val_dataset)
 
         return info
 
+    def _get_checkpoint_manager(self, checkpoint):
+        manager = Checkpointer._get_checkpoint_manager(self, checkpoint)
+        return manager
+
     def overwrite_config_for_fast_dev_run(self):
-        print("[fast-dev-run mode enabled] :: Model will run on single batch, ckpts won't be saved/loaded")
-        self.save_only_final_ckpts = False
+        print("[fast-dev-run mode enabled] &&& Model will run on single batch, ckpts won't be saved/loaded")
+        self.save_only_final_ckpt = False
         self.save_every_ckpt = False
         self.epochs = self.start_epoch + 1
         self.load_dir = ''
@@ -77,8 +92,6 @@ class Trainer(TrainerConfig, TrainingLoop):
         """
         If you wish to over-write some of the args passed through Terminal,
         use this kwargs
-
-        Useful especially in case of defining checkpoint object
         """
         args_dictn = {}
 
@@ -89,8 +102,5 @@ class Trainer(TrainerConfig, TrainingLoop):
 
         # over-writing over args passed using Terminal
         args_dictn.update(kwargs)
-
-        if 'checkpoint' not in args_dictn:
-            print('==========You are not passing checkpoint object============')
 
         return cls(**args_dictn)

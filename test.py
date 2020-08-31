@@ -27,7 +27,7 @@ class TestModel(tl.LightningModule):
         pred = self(batch)
         loss = tf.reduce_mean(pred)
 
-        log = {'batch_idx': batch_idx, 'loss': loss}
+        log = {'batch_idx': batch_idx, 'tr_loss': loss}
         result = tl.TrainResult(
             loss, self.model.trainable_variables, log=log)
 
@@ -38,10 +38,14 @@ class TestModel(tl.LightningModule):
         pred = self(batch)
         loss = tf.reduce_mean(pred)
 
-        log = {'batch_idx': batch_idx, 'loss': loss}
+        log = {'batch_idx': batch_idx, 'val_loss': loss}
         result = tl.EvalResult(loss, log=log)
 
         return result
+
+    def checkpointer(self):
+        return tf.train.Checkpoint(m=self.model,
+                                   opt0=self.optimizer_0)
 
 
 class TestDataLoader(tl.LightningDataModule):
@@ -71,6 +75,6 @@ if __name__ == '__main__':
 
     dataloader = TestDataLoader()
 
-    trainer = tl.Trainer(fast_dev_run=False)
+    trainer = tl.Trainer()
 
     trainer.fit(model, dataloader)

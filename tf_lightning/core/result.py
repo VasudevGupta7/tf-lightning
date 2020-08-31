@@ -17,14 +17,13 @@ class TrainResult(object):
     def __new__(self,
                 minimize: tf.Tensor,
                 trainable_variables: tf.Tensor,
-                log: dict = {}):
+                log: dict = None):
 
         args = {
             'minimize': minimize,
-            'trainable_variables': trainable_variables
+            'trainable_variables': trainable_variables,
+            'log': log
         }
-
-        args.update(log)
 
         return args
 
@@ -38,12 +37,11 @@ class EvalResult(object):
 
     def __new__(self,
                 minimize: tf.Tensor,
-                log: dict = {}):
+                log: dict = None):
 
         args = {
-            'minimize': minimize
+            'minimize': minimize,
+            'log': log
         }
-
-        args.update(log)
 
         return args

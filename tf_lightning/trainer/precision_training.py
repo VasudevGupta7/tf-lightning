@@ -3,8 +3,10 @@
 import tensorflow as tf
 from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
+from abc import ABC, abstractmethod
 
-class PrecisionTraining(object):
+
+class PrecisionTraining(ABC):
     """
     Everything related to precision will be handled by lightning :)
 
@@ -15,36 +17,26 @@ class PrecisionTraining(object):
         Since its recommended to use `float32` in the last layer, in case one is training with mixed precision policy.
         You need to change output layer precision to `float32` by yourself
         """
-    enable_precision_training = False
 
+    @abstractmethod
     def optimizer_step(self, grads, trainable_variables, batch_idx, optimizer_idx):
-        raise NotImplementedError
+        """Warning: this is just empty shell for code implemented in other class."""
 
+    @abstractmethod
     def backward(self, loss, trainable_variables, batch_idx, optimizer_idx):
-        raise NotImplementedError
+        """Warning: this is just empty shell for code implemented in other class."""
 
+    @abstractmethod
     def training_step(batch, batch_idx, optimizer_idx):
-        raise NotImplementedError
+        """Warning: this is just empty shell for code implemented in other class."""
 
-    # @property
-    # def opt_indices(self):
-    #     raise NotImplementedError
-
-    # @property
-    # def optimizer_0(self):
-    #     raise NotImplementedError
-
-    # @property
-    # def optimizer_1(self):
-    #     raise NotImplementedError
-
-    def __init__(self, policy_name='mixed_float16'):
+    def __init__(self):
 
         if self.enable_precision_training:
-            policy = mixed_precision.Policy(policy_name)
+            policy = mixed_precision.Policy(self.policy_name)
             mixed_precision.set_policy(policy)
 
-    def wrap_mixed_precision_optimizer(self):
+    def _wrap_mixed_precision_optimizer(self):
 
         for i in self.opt_indices:
             optimizer = getattr(self, f"optimizer_{i}")

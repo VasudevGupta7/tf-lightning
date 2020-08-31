@@ -13,13 +13,12 @@ class LightningModule(ABC, tf.keras.Model):
     """
 
     def __init__(self):
+        super().__init__()
         optimizer, opt_indices = self._get_optimizer()
 
         self.opt_indices = opt_indices
         for i in opt_indices:
             setattr(self, f"optimizer_{i}", optimizer[i])
-
-        super().__init__(self)
 
     def call(self, dataset):
         """[Optional]
@@ -61,6 +60,24 @@ class LightningModule(ABC, tf.keras.Model):
         elif optimizer_idx == 1:
             self.optimizer_1.apply_gradients(zip(grads, trainable_variables))
 
+    def checkpointer(self):
+        """[Optional]
+        Define ckpt in this method and return it
+
+        optimizers can be accessed using:
+            self.optimizer_0
+            self.optimizer_1
+        indices depend on how you are returning from `configure_optimizers` method
+
+        Note:
+            You need to define the checkpoint incase you want save it.
+            By defualt, all epoch-checkpoints are saved; but you can change this setting while initializing `Trainer`
+
+        return:
+            `tf.train.Checkpoint` object
+        """
+        return
+
     @abstractmethod
     def training_step(self, batch, batch_idx, optimizer_idx):
         """[Necessary]
@@ -73,7 +90,8 @@ class LightningModule(ABC, tf.keras.Model):
 
         must specify `minimize`, `trainable_variables` in `TrainResult`
 
-        additionally you can specify what to log using `log` attribute of `TrainResult`
+        additionally you can specify what to log using `log` argument of `TrainResult`
+        Everything must be `tf.Tensor`
         """
         return
 
@@ -87,7 +105,8 @@ class LightningModule(ABC, tf.keras.Model):
 
         you may specify `loss` in `EvalResult`
 
-        additionally you can specify what to log using `log` attribute of EvalResult`
+        additionally you can specify what to log using `log` argument of EvalResult`
+        Everything must be `tf.Tensor`
         """
         return
 
