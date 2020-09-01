@@ -13,7 +13,7 @@ from tf_lightning.trainer.precision_training import PrecisionTraining
 from tf_lightning.trainer.distributed_training import DistributedTraining
 
 
-class Trainer(TrainerConfig, TrainingLoop, PrecisionTraining, DistributedTraining, Checkpointer):
+class Trainer(TrainerConfig, TrainingLoop, PrecisionTraining, Checkpointer):
 
     def __init__(self, **kwargs):
         """
@@ -35,7 +35,6 @@ class Trainer(TrainerConfig, TrainingLoop, PrecisionTraining, DistributedTrainin
             self.enable_callbacks = False
 
         PrecisionTraining.__init__(self)
-        DistributedTraining.__init__(self)
 
     def fit(self, lightning_module, lightning_data_module):
 
