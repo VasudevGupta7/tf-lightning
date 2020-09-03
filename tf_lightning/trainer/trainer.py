@@ -10,7 +10,6 @@ from tf_lightning.trainer.trainer_config import TrainerConfig
 from tf_lightning.loggers.wandb import WandbLogger
 from tf_lightning.callbacks.checkpointer import Checkpointer
 from tf_lightning.trainer.precision_training import PrecisionTraining
-from tf_lightning.trainer.distributed_training import DistributedTraining
 
 
 class Trainer(TrainerConfig, TrainingLoop, PrecisionTraining, Checkpointer):
