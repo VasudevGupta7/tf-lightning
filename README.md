@@ -16,8 +16,8 @@ It's currently supporting simple features for training models. I will add more f
 ## Installation
 
 ```Python
-# install tensorflow-2.3 first
-pip install tensorflow==2.3
+# install tensorflow-2.4.0 first
+pip install tensorflow==2.4.0
 
 # Run this command to install tf_lightning
 pip install git+https://github.com/VasudevGupta7/tf-lightning.git@master
